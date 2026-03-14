@@ -63,7 +63,7 @@ Copy-paste on a fresh Linux VM (RunPod, Lambda, Vast.ai):
 
 ```bash
 # 1. System
-apt-get update && apt-get install -y unzip wget git
+apt-get update && apt-get install -y unzip wget git cmake build-essential
 pip install --upgrade pip
 
 # 2. Clone this repo
