@@ -1,8 +1,12 @@
 # =============================================================================
-# Stamp Detection - YOLOv9-S Training Configuration
+# Stamp Detection - YOLOv9-S Training Configuration (MPS - Apple Silicon)
 # =============================================================================
 #
-# Dataset: 17,703 train + 2,418 val (stamps + negative documents)
+# Dataset: mapo80/stamps from HuggingFace
+#   - Train: 20,857 images (16,503 positive + 4,354 negative)
+#   - Val: 3,059 images (2,268 positive + 791 negative)
+#   - 1 class (stamp), 28,101 train bboxes
+#
 # Model: YOLOv9-S (pretrained on COCO)
 # Image size: 320x320
 # Accelerator: MPS (Apple Silicon)
@@ -20,7 +24,7 @@ trainer:
   max_epochs: 300
   accelerator: mps
   devices: 1
-  precision: 32               # MPS requires 32-bit (no 16-mixed support)
+  precision: 32                     # MPS requires 32-bit (no 16-mixed support)
   gradient_clip_val: 10.0
   accumulate_grad_batches: 1
   log_every_n_steps: 50
@@ -43,7 +47,7 @@ trainer:
       init_args:
         monitor: val/mAP
         mode: max
-        patience: 50
+        patience: 30
         verbose: true
         check_on_train_epoch_end: false
 
@@ -100,9 +104,9 @@ model:
   warmup_momentum: 0.8
   warmup_bias_lr: 0.1
 
-  # Loss weights
+  # Loss weights (tuned for single-class stamp detection)
   box_loss_weight: 7.5
-  cls_loss_weight: 0.5
+  cls_loss_weight: 0.3
   dfl_loss_weight: 1.5
 
   # Pretrained weights (transfer learning from COCO)
@@ -115,7 +119,7 @@ model:
   # NMS settings
   nms_conf_threshold: 0.25
   nms_iou_threshold: 0.65
-  nms_max_detections: 300
+  nms_max_detections: 50
   save_metrics_plots: true
 
 # -----------------------------------------------------------------------------
@@ -131,31 +135,31 @@ data:
   val_labels: labels/val
 
   # DataLoader
-  batch_size: 64
-  num_workers: 8
+  batch_size: 64                    # M2 Pro 32GB. Increase to 128 on M3 Max/Ultra
+  num_workers: 4                    # macOS multiprocessing limit
   pin_memory: true
 
   # Multi-Image Augmentation
   mosaic_prob: 1.0
-  mosaic_9_prob: 0.0
+  mosaic_9_prob: 0.2
   mixup_prob: 0.15
-  mixup_alpha: 32.0
+  mixup_alpha: 8.0
   cutmix_prob: 0.0
 
-  # Single-Image Augmentation
+  # Single-Image Augmentation (tuned for scanned documents)
   hsv_h: 0.015
   hsv_s: 0.7
   hsv_v: 0.4
-  degrees: 15.0
+  degrees: 5.0
   translate: 0.1
-  scale: 0.5
+  scale: 0.3
   shear: 0.0
   perspective: 0.0
   flip_lr: 0.5
-  flip_ud: 0.0
+  flip_ud: 0.5
 
   # Training Schedule
-  close_mosaic_epochs: 10
+  close_mosaic_epochs: 15
 
   # Caching
   cache_labels: true

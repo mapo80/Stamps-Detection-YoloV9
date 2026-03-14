@@ -5,11 +5,16 @@
 # Dataset: mapo80/stamps from HuggingFace
 #   - Train: 20,857 images (16,503 positive + 4,354 negative)
 #   - Val: 3,059 images (2,268 positive + 791 negative)
+#   - 1 class (stamp), 28,101 train bboxes
+#   - Bbox sizes: 6.6% small, 80.8% medium, 12.7% large
+#   - Median bbox: 67x51 px at 320px (normalized 0.21 x 0.16)
+#
 # Model: YOLOv9-S (pretrained on COCO)
 # Image size: 320x320
 #
 # Usage:
-#   python -m yolo.cli fit --config config_stamp_gpu.yaml
+#   cd yolo-framework
+#   python -m yolo.cli fit --config ../config_stamp_gpu.yaml
 #
 # =============================================================================
 
@@ -43,7 +48,7 @@ trainer:
       init_args:
         monitor: val/mAP
         mode: max
-        patience: 50
+        patience: 30                  # 30 is enough with 20K images per epoch
         verbose: true
         check_on_train_epoch_end: false
 
@@ -100,10 +105,10 @@ model:
   warmup_momentum: 0.8
   warmup_bias_lr: 0.1
 
-  # Loss weights
-  box_loss_weight: 7.5
-  cls_loss_weight: 0.5
-  dfl_loss_weight: 1.5
+  # Loss weights (tuned for single-class stamp detection)
+  box_loss_weight: 7.5              # Standard, box regression is the main task
+  cls_loss_weight: 0.3              # Reduced: only 1 class, classification is trivial
+  dfl_loss_weight: 1.5              # Standard
 
   # Pretrained weights (transfer learning from COCO)
   weight_path: true
@@ -115,7 +120,7 @@ model:
   # NMS settings
   nms_conf_threshold: 0.25
   nms_iou_threshold: 0.65
-  nms_max_detections: 300
+  nms_max_detections: 50            # Max stamps/image in dataset is 35
   save_metrics_plots: true
 
 # -----------------------------------------------------------------------------
@@ -131,35 +136,35 @@ data:
   val_labels: labels/val
 
   # DataLoader
-  batch_size: 128
+  batch_size: 64                    # Safe for T4 16GB at 320px. Override: --data.batch_size=256
   num_workers: 8
   pin_memory: true
 
   # Multi-Image Augmentation
-  mosaic_prob: 1.0
-  mosaic_9_prob: 0.0
+  mosaic_prob: 1.0                  # Always mosaic — key augmentation for detection
+  mosaic_9_prob: 0.2                # 20% chance of 9-tile mosaic (helps small stamps, 6.6% of dataset)
   mixup_prob: 0.15
-  mixup_alpha: 32.0
+  mixup_alpha: 8.0                  # Reduced from 32: high alpha blends too aggressively, harms bbox quality
   cutmix_prob: 0.0
 
-  # Single-Image Augmentation
-  hsv_h: 0.015
-  hsv_s: 0.7
-  hsv_v: 0.4
-  degrees: 15.0
-  translate: 0.1
-  scale: 0.5
+  # Single-Image Augmentation (tuned for scanned documents)
+  hsv_h: 0.015                     # Standard
+  hsv_s: 0.7                       # Standard
+  hsv_v: 0.4                       # Standard
+  degrees: 5.0                     # Reduced from 15: scanned documents have minimal rotation
+  translate: 0.1                   # Standard
+  scale: 0.3                       # Reduced from 0.5: prevents small stamps from becoming invisible at 320px
   shear: 0.0
   perspective: 0.0
-  flip_lr: 0.5
-  flip_ud: 0.0
+  flip_lr: 0.5                     # Standard
+  flip_ud: 0.5                     # Enabled: documents can be scanned upside down
 
   # Training Schedule
-  close_mosaic_epochs: 10
+  close_mosaic_epochs: 15           # More epochs without mosaic for fine-tuning at the end
 
   # Caching
   cache_labels: true
-  cache_images: none
+  cache_images: none                # Set to "ram" if you have >32GB RAM for faster training
   cache_resize_images: true
   cache_max_memory_gb: 16.0
   cache_refresh: false
