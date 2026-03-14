@@ -8,7 +8,7 @@
 #   - 1 class (stamp), 28,101 train bboxes
 #
 # Model: YOLOv9-S (pretrained on COCO)
-# Image size: 320x320
+# Image size: 640x640
 # Accelerator: MPS (Apple Silicon)
 #
 # Usage:
@@ -47,7 +47,7 @@ trainer:
       init_args:
         monitor: val/mAP
         mode: max
-        patience: 30
+        patience: 50
         verbose: true
         check_on_train_epoch_end: false
 
@@ -83,7 +83,7 @@ model:
   # Architecture
   model_config: v9-s
   num_classes: 1
-  image_size: [320, 320]
+  image_size: [640, 640]
 
   # Class names
   class_names:
@@ -104,10 +104,10 @@ model:
   warmup_momentum: 0.8
   warmup_bias_lr: 0.1
 
-  # Loss weights (tuned for single-class stamp detection)
+  # Loss weights
   box_loss_weight: 7.5
-  cls_loss_weight: 0.3
-  dfl_loss_weight: 1.5
+  cls_loss_weight: 0.5
+  dfl_loss_weight: 0.5
 
   # Pretrained weights (transfer learning from COCO)
   weight_path: true
@@ -135,13 +135,13 @@ data:
   val_labels: labels/val
 
   # DataLoader
-  batch_size: 64                    # M2 Pro 32GB. Increase to 128 on M3 Max/Ultra
+  batch_size: 16                    # M2 Pro 32GB, precision=32, 640px
   num_workers: 4                    # macOS multiprocessing limit
   pin_memory: true
 
   # Multi-Image Augmentation
   mosaic_prob: 1.0
-  mosaic_9_prob: 0.2
+  mosaic_9_prob: 0.1
   mixup_prob: 0.15
   mixup_alpha: 8.0
   cutmix_prob: 0.0
@@ -152,7 +152,7 @@ data:
   hsv_v: 0.4
   degrees: 5.0
   translate: 0.1
-  scale: 0.3
+  scale: 0.5
   shear: 0.0
   perspective: 0.0
   flip_lr: 0.5

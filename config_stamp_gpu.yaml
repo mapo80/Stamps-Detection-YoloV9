@@ -7,10 +7,10 @@
 #   - Val: 3,059 images (2,268 positive + 791 negative)
 #   - 1 class (stamp), 28,101 train bboxes
 #   - Bbox sizes: 6.6% small, 80.8% medium, 12.7% large
-#   - Median bbox: 67x51 px at 320px (normalized 0.21 x 0.16)
+#   - Median bbox: 134x102 px at 640px (normalized 0.21 x 0.16)
 #
 # Model: YOLOv9-S (pretrained on COCO)
-# Image size: 320x320
+# Image size: 640x640 (matches MDPI 2025 benchmark paper)
 #
 # Usage:
 #   cd yolo-framework
@@ -48,7 +48,7 @@ trainer:
       init_args:
         monitor: val/mAP
         mode: max
-        patience: 30                  # 30 is enough with 20K images per epoch
+        patience: 50                  # Matches MDPI 2025 benchmark paper
         verbose: true
         check_on_train_epoch_end: false
 
@@ -84,13 +84,13 @@ model:
   # Architecture
   model_config: v9-s
   num_classes: 1
-  image_size: [320, 320]
+  image_size: [640, 640]
 
   # Class names
   class_names:
     - stamp
 
-  # Optimizer
+  # Optimizer (matches MDPI 2025 benchmark)
   optimizer: sgd
   learning_rate: 0.01
   momentum: 0.937
@@ -105,10 +105,10 @@ model:
   warmup_momentum: 0.8
   warmup_bias_lr: 0.1
 
-  # Loss weights (tuned for single-class stamp detection)
-  box_loss_weight: 7.5              # Standard, box regression is the main task
-  cls_loss_weight: 0.3              # Reduced: only 1 class, classification is trivial
-  dfl_loss_weight: 1.5              # Standard
+  # Loss weights (Ultralytics defaults: box=7.5, cls=1.5, dfl=0.5)
+  box_loss_weight: 7.5              # Standard
+  cls_loss_weight: 0.5              # Reduced from 1.5: single class needs less cls signal, but >0.3 for confidence calibration
+  dfl_loss_weight: 0.5              # Ultralytics default (was incorrectly set to 1.5)
 
   # Pretrained weights (transfer learning from COCO)
   weight_path: true
@@ -136,35 +136,35 @@ data:
   val_labels: labels/val
 
   # DataLoader
-  batch_size: 64                    # Safe for T4 16GB at 320px. Override: --data.batch_size=256
+  batch_size: 32                    # Safe for T4 16GB at 640px. Override: --data.batch_size=64 (A100)
   num_workers: 8
   pin_memory: true
 
   # Multi-Image Augmentation
   mosaic_prob: 1.0                  # Always mosaic — key augmentation for detection
-  mosaic_9_prob: 0.2                # 20% chance of 9-tile mosaic (helps small stamps, 6.6% of dataset)
+  mosaic_9_prob: 0.1                # 10% chance of 9-tile mosaic (less needed at 640px)
   mixup_prob: 0.15
   mixup_alpha: 8.0                  # Reduced from 32: high alpha blends too aggressively, harms bbox quality
   cutmix_prob: 0.0
 
   # Single-Image Augmentation (tuned for scanned documents)
-  hsv_h: 0.015                     # Standard
-  hsv_s: 0.7                       # Standard
-  hsv_v: 0.4                       # Standard
-  degrees: 5.0                     # Reduced from 15: scanned documents have minimal rotation
-  translate: 0.1                   # Standard
-  scale: 0.3                       # Reduced from 0.5: prevents small stamps from becoming invisible at 320px
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 5.0                     # Scanned documents have minimal rotation
+  translate: 0.1
+  scale: 0.5                       # Standard at 640px (small stamps are ~130px, safe to scale)
   shear: 0.0
   perspective: 0.0
-  flip_lr: 0.5                     # Standard
-  flip_ud: 0.5                     # Enabled: documents can be scanned upside down
+  flip_lr: 0.5
+  flip_ud: 0.5                     # Documents can be scanned upside down
 
   # Training Schedule
   close_mosaic_epochs: 15           # More epochs without mosaic for fine-tuning at the end
 
   # Caching
   cache_labels: true
-  cache_images: none                # Set to "ram" if you have >32GB RAM for faster training
+  cache_images: none                # Set to "ram" if you have >64GB RAM for faster training
   cache_resize_images: true
   cache_max_memory_gb: 16.0
   cache_refresh: false

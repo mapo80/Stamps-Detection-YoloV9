@@ -8,7 +8,7 @@ Object detection of stamps on scanned documents.
 | **Class** | `stamp` (single class, id 0) |
 | **Model** | YOLOv9-S (pretrained COCO) |
 | **Framework** | [mapo80/YOLO](https://github.com/mapo80/YOLO) (PyTorch Lightning) |
-| **Image size** | 320x320 |
+| **Image size** | 640x640 |
 | **Dataset** | [mapo80/stamps](https://huggingface.co/datasets/mapo80/stamps) (~6 GB) |
 
 ---
