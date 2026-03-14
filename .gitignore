@@ -1,0 +1,10 @@
+data/
+runs/
+yolo-framework/
+*.pt
+*.onnx
+*.ckpt
+*.zip
+.env
+__pycache__/
+*.pyc
