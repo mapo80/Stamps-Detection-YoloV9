@@ -107,7 +107,7 @@ model:
 
   # Loss weights (Ultralytics defaults: box=7.5, cls=1.5, dfl=0.5)
   box_loss_weight: 7.5              # Standard
-  cls_loss_weight: 1.0              # Single class but needs good confidence calibration for FP reduction
+  cls_loss_weight: 0.5              # Single class needs less cls signal
   dfl_loss_weight: 0.5              # Ultralytics default (was incorrectly set to 1.5)
 
   # Pretrained weights (transfer learning from COCO)
@@ -141,26 +141,26 @@ data:
   pin_memory: true
 
   # Multi-Image Augmentation
-  mosaic_prob: 0.8                  # 80% mosaic — leave 20% real images for the model to learn actual layouts
-  mosaic_9_prob: 0.0                # Disabled: 9-tile shrinks stamps too much at 640px
+  mosaic_prob: 1.0                  # Always mosaic — key augmentation for detection
+  mosaic_9_prob: 0.1                # 10% chance of 9-tile mosaic
   mixup_prob: 0.0                   # Disabled: mixup confuses stamp/text boundaries on documents
   mixup_alpha: 8.0
   cutmix_prob: 0.0
 
   # Single-Image Augmentation (tuned for scanned documents)
   hsv_h: 0.015
-  hsv_s: 0.3                       # Reduced: documents are mostly B/W or low-saturation
-  hsv_v: 0.3                       # Reduced: avoid washing out faint stamps
-  degrees: 10.0                    # Moderate rotation — stamps can be at slight angles
-  translate: 0.15                  # Slightly more translate to handle stamp positions
-  scale: 0.3                       # Reduced: avoid shrinking small stamps below detection threshold
-  shear: 2.0                       # Slight shear — simulates scan perspective
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 5.0                     # Scanned documents have minimal rotation
+  translate: 0.1
+  scale: 0.5                       # Standard at 640px
+  shear: 0.0
   perspective: 0.0
   flip_lr: 0.5
   flip_ud: 0.0                     # Disabled: stamps have text/orientation, upside-down is unrealistic
 
   # Training Schedule
-  close_mosaic_epochs: 20           # More epochs of clean images at the end for fine-tuning
+  close_mosaic_epochs: 15           # Disable mosaic for final fine-tuning
 
   # Caching
   cache_labels: true
