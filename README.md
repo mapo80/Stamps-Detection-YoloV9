@@ -67,8 +67,8 @@ apt-get update && apt-get install -y unzip wget git
 pip install --upgrade pip
 
 # 2. Clone this repo
-git clone https://github.com/mapo80/stamps-detection.git
-cd stamps-detection
+git clone https://github.com/mapo80/Stamps-Detection-YoloV9.git
+cd Stamps-Detection-YoloV9
 
 # 3. Install YOLO framework
 git clone https://github.com/mapo80/YOLO.git yolo-framework
@@ -103,6 +103,32 @@ tensorboard --logdir runs/stamp_v9s_logs --bind_all
 
 ```bash
 python -m yolo.cli fit --config ../config_stamp_gpu.yaml --data.batch_size=256
+```
+
+### Run with nohup (keep training after SSH disconnect)
+
+```bash
+cd yolo-framework
+nohup python -m yolo.cli fit --config ../config_stamp_gpu.yaml > ../training.log 2>&1 &
+echo $! > ../training.pid
+echo "Training started (PID: $(cat ../training.pid)). Logs: training.log"
+```
+
+Monitor:
+```bash
+tail -f training.log
+```
+
+Resume with nohup:
+```bash
+cd yolo-framework
+nohup python -m yolo.cli fit --config ../config_stamp_gpu.yaml \
+  --ckpt_path ../runs/stamp_v9s/last.ckpt > ../training.log 2>&1 &
+```
+
+Stop training:
+```bash
+kill $(cat training.pid)
 ```
 
 ---
